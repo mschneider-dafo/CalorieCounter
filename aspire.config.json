@@ -1,0 +1,6 @@
+{
+  "appHost": {
+    "path": "CalorieCounter.AppHost/CalorieCounter.AppHost.csproj"
+  },
+  "channel": "stable"
+}
