@@ -8,5 +8,4 @@ public record AuthOkResponse(string Token, DateTimeOffset ExpiresAt){
     internal AuthOkResponse((string Token, DateTime ExpiresAt) arg):this(arg.Token, new DateTimeOffset(arg.ExpiresAt))
     {
     }
-
 }
