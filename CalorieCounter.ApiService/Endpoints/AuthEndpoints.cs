@@ -1,44 +1,47 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Identity;
 namespace CalorieCounter.ApiService;
+
+using AuthResult = Results<Ok<AuthOkResponse>, ValidationProblem>;
 
 public static class AuthEndpoints
 {
-    public static void MapAuthEndpoints(this WebApplication app)
-    {
-        app.MapPost("/api/register", 
-                async(RegisterRequest request, UserManager<User> userManager, JwtService serv) =>{
-                    User user = new User(){
-                        UserName = request.Username,
-                        Email = request.Email,
-                    };
+   public static void MapAuthEndpoints(this WebApplication app)
+   {
+      app.MapPost("/api/register", Register).WithName("Register").WithSummary("Registers a new User, email and username must be unique");
+      app.MapPost("/api/login", Login).WithName("Login").WithSummary("Login with already registered User");
+   }
 
-                    var res = await userManager.CreateAsync(user,request.Password);
+   private static async Task<AuthResult> Register(RegisterRequest request, UserManager<User> userManager, JwtService serv)
+   {
+      User user = new User()
+      {
+         UserName = request.Username,
+         Email = request.Email,
+         CreatedAt = DateTimeOffset.UtcNow
+      };
 
-                    if(res.Succeeded){
-                        var tok = serv.GenerateToken(user);
-                        return Results.Ok(new AuthOkResponse(tok));
-                    }
+      var res = await userManager.CreateAsync(user, request.Password);
 
-                    return Results.BadRequest(res.Errors);
+      if (res.Succeeded)
+      {
+         var tok = serv.GenerateToken(user);
+         return TypedResults.Ok(new AuthOkResponse(tok));
+      }
 
-                });
+      return TypedResults.ValidationProblem(res.Errors.GroupBy(x=> x.Code).ToDictionary(e => e.Key, e => e.Select(x=> x.Description).ToArray()));
+   }
 
-        app.MapPost("/api/login",
-                async(LoginRequest request, UserManager<User> userManager, JwtService serv) =>{
-                    var user = await userManager.FindByNameAsync(request.Username);
+   private static async Task<AuthResult> Login(LoginRequest request, UserManager<User> userManager, JwtService serv)
+   {
+      var user = await userManager.FindByNameAsync(request.Username);
 
-                    if(user is null)
-                        return Results.BadRequest("Username not found");
+      if (user is null || !await userManager.CheckPasswordAsync(user, request.Password))
+         return TypedResults.ValidationProblem([new KeyValuePair<string, string[]>("Credentials", ["Wrong username or password"])]);
 
-                    var res = await userManager.CheckPasswordAsync(user,request.Password);
+      var tok = serv.GenerateToken(user);
 
-                    if(!res)
-                        return Results.BadRequest("Password not correct");
+      return TypedResults.Ok(new AuthOkResponse(tok));
+   }
 
-
-                    var tok = serv.GenerateToken(user);
-
-                    return Results.Ok(new AuthOkResponse(tok));
-                });
-    }
 }
