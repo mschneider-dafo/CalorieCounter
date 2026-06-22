@@ -1,0 +1,4 @@
+# Normalize line endings to LF for all text files, on every platform.
+# This overrides each machine's core.autocrlf, so Linux and Windows
+# produce byte-identical blobs and the working tree always checks out LF.
+* text=auto eol=lf
