@@ -14,7 +14,7 @@ public static class FoodEndpoints{
            .RequireAuthorization();
 
 
-        app.MapPost("/api/foods", EnterFood)
+        app.MapPost("/api/enterfood", EnterFood)
            .WithName("EnterFood")
            .RequireAuthorization();
 
@@ -70,6 +70,10 @@ public static class FoodEndpoints{
         if(item.Calories +5 < ((item.Protein + item.Carbs)*4 + (item.Fat * 9)))
         {
             return (false, "Calories can't be less than calories from macros");
+        }
+
+        if(item.Protein + item.Carbs + item.Fat > 100){
+            return (false, "Protein, Carbohydrates and Fat can't be more than 100gram per 100 gram");
         }
 
 

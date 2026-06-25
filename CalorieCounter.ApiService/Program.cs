@@ -23,7 +23,7 @@ builder.Services.AddIdentity<User,IdentityRole<int>>( options => {options.User.R
                 .AddEntityFrameworkStores<CalorieDbContext>()
                 .AddDefaultTokenProviders();
 
-builder.Services.AddAuthentication()
+builder.Services.AddAuthentication("Bearer")
                 .AddJwtBearer(options =>
                         options.TokenValidationParameters = new TokenValidationParameters(){
                         ValidateIssuer = true,
@@ -57,6 +57,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseAuthentication();
+app.UseRouting();
 app.UseAuthorization();
 app.MapDefaultEndpoints();
 app.MapAuthEndpoints();
