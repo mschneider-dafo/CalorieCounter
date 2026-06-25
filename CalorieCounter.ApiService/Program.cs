@@ -19,7 +19,7 @@ builder.Services.AddOpenApi();
 
 builder.Services.AddSingleton<JwtService>();
 
-builder.Services.AddIdentity<User,IdentityRole<int>>( options => {options.User.RequireUniqueEmail = true;})
+builder.Services.AddIdentityCore<User>( options => {options.User.RequireUniqueEmail = true;})
                 .AddEntityFrameworkStores<CalorieDbContext>()
                 .AddDefaultTokenProviders();
 

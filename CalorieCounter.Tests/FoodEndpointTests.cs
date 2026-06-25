@@ -35,25 +35,25 @@ public class FoodEndpointTests {
         UserProvidedFoodItem req = new("Chicken Breast", 104, 22,0,1.8);
         var resp = await client.PostAsJsonAsync("api/enterfood", req);
         if(resp.StatusCode != System.Net.HttpStatusCode.Created){
-            Assert.Fail(resp.StatusCode.ToString());
+            Assert.Fail(resp.StatusCode.ToString() + await resp.Content.ReadAsStringAsync());
         }
-        req = new("Spaghetti",330,12.5,70.5,1.2); 
-        resp = await client.PostAsJsonAsync("api/enterfood", req);
-        if(resp.StatusCode != System.Net.HttpStatusCode.Created){
-            Assert.Fail(resp.StatusCode.ToString());
+        UserProvidedFoodItem req2 = new("Spaghetti",359,13.5,70.2,2); 
+        var resp2 = await client.PostAsJsonAsync("api/enterfood", req2);
+        if(resp2.StatusCode != System.Net.HttpStatusCode.Created){
+            Assert.Fail(resp2.StatusCode.ToString() + await resp2.Content.ReadAsStringAsync());
         }
-        req = new("Olive Oil",857,0,0,91.5);
-        resp =await client.PostAsJsonAsync("api/enterfood", req);
-        if(resp.StatusCode != System.Net.HttpStatusCode.Created){
-            Assert.Fail();
+        UserProvidedFoodItem req3 = new("Olive Oil",857,0,0,91.5);
+        var resp3 =await client.PostAsJsonAsync("api/enterfood", req3);
+        if(resp3.StatusCode != System.Net.HttpStatusCode.Created){
+            Assert.Fail(resp3.StatusCode.ToString() + await resp3.Content.ReadAsStringAsync());
         }
-        req = new("Pizza Margherita",231,9,35,5.5);
-        resp = await client.PostAsJsonAsync("api/enterfood", req);
-        if(resp.StatusCode != System.Net.HttpStatusCode.Created){
-            Assert.Fail();
+        UserProvidedFoodItem req4 = new("Pizza Margherita",231,9,35,5.5);
+        var resp4 = await client.PostAsJsonAsync("api/enterfood", req4);
+        if(resp4.StatusCode != System.Net.HttpStatusCode.Created){
+            Assert.Fail(resp4.StatusCode.ToString() + await resp4.Content.ReadAsStringAsync());
         }
 
-        FoodItemForUser? food = await resp.Content.ReadFromJsonAsync<FoodItemForUser>();
+        FoodItemForUser? food = await resp4.Content.ReadFromJsonAsync<FoodItemForUser>();
 
         pizzaGuid = food?.Identification ?? pizzaGuid;
     }
@@ -95,6 +95,71 @@ public class FoodEndpointTests {
     }
 
     [Test]
+    public async Task FoodWithStringQuerySuccess(){
+        var resp = await _client.GetAsync("/api/foods?name=Spag");
+        Assert.That(resp.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.OK));
+
+        var cont = await resp.Content.ReadFromJsonAsync<FoodItemForUser[]>();
+        if(cont is null)
+        {
+            Assert.Fail();
+            return;
+        }
+        
+        Assert.That(cont.Length, Is.EqualTo(1));
+        Assert.That(cont[0].Name, Is.EqualTo("Spaghetti"));
+        Assert.That(cont[0].Calories, Is.EqualTo(359));
+    }
+
+    [Test]
+    public async Task FoodWithStringQueryEmpty(){
+        var resp = await _client.GetAsync("/api/foods?name=Alphanumeric");
+
+        Assert.That(resp.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.OK));
+
+        var cont = await resp.Content.ReadFromJsonAsync<FoodItemForUser[]>();
+        if(cont is null)
+        {
+            Assert.Fail();
+            return;
+        }
+        
+        Assert.That(cont.Length, Is.EqualTo(0));
+    }
+
+    [Test]
+    public async Task EnterFoodSuccess(){
+        var req = new UserProvidedFoodItem("TestFood", 300, 30,10,10);
+        var resp = await _client.PostAsJsonAsync("/api/enterfood", req);
+
+        Assert.That(resp.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.Created));
+        FoodItemForUser? food = await resp.Content.ReadFromJsonAsync<FoodItemForUser>();
+        Assert.That(food, Is.Not.Null);
+
+        
+        Assert.Multiple(()=> {
+                Assert.That(food!.Name, Is.EqualTo(req.Name));
+                Assert.That(food.Calories, Is.EqualTo(req.Calories));
+                Assert.That(food.Protein, Is.EqualTo(req.Protein));
+                Assert.That(food.Fat, Is.EqualTo(req.Fat));
+                Assert.That(food.Carbs, Is.EqualTo(req.Carbs));
+                Assert.That(food.Identification, Is.Not.EqualTo(Guid.Empty));
+                Assert.That(food.LastModified, Is.LessThan(DateTimeOffset.Now));
+                });
+
+        var uri = resp.Headers.Location;
+
+        Assert.That(uri, Is.Not.Null);
+
+        var get = await _client.GetAsync(uri);
+        Assert.That(get.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.OK));
+
+        var food2 = await get.Content.ReadFromJsonAsync<FoodItemForUser>();
+        
+        Assert.That(food2, Is.EqualTo(food));
+    }
+
+    [Test]
     public async Task GetFoods(){
         FoodItemForUser[]? resp = await _client.GetFromJsonAsync<FoodItemForUser[]>("/api/foods");
         
@@ -102,7 +167,7 @@ public class FoodEndpointTests {
         if(resp is null)
             return;
         Assert.That(resp, Has.Length.AtLeast(3));
-        Assert.That(resp, Has.One.Matches<FoodItemForUser>(f=> f.Name == "Spaghetti" && f.Carbs == 70.5));
+        Assert.That(resp, Has.One.Matches<FoodItemForUser>(f=> f.Name == "Spaghetti" && f.Carbs == 70.2));
         Assert.That(resp, Has.One.Matches<FoodItemForUser>(f=> f.Name == "Chicken Breast" && f.Carbs == 0 && f.Protein == 22));
         Assert.That(resp, Has.One.Matches<FoodItemForUser>(f=> f.Name == "Olive Oil" && f.Calories == 857 && f.Fat== 91.5));
     }
@@ -118,9 +183,16 @@ public class FoodEndpointTests {
         UserProvidedFoodItem food = new("Test", 500,-5,2,40);
         var resp = await _client.PostAsJsonAsync("/api/enterfood", food);
         Assert.That(resp.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.BadRequest));
-        var err = await resp.Content.ReadAsStringAsync();
+        var err = await resp.Content.ReadFromJsonAsync<string>();
 
-        Assert.That(err == "Nutritional value must be non-negative");
+        Assert.That(err, Is.EqualTo("Nutritional value must be non-negative"), err);
+    }
+
+    [Test]
+    public async Task TryEnterExactCalories(){
+        UserProvidedFoodItem food = new("Test", 50,10,2.5,0);
+        var resp = await _client.PostAsJsonAsync("/api/enterfood", food);
+        Assert.That(resp.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.Created));
     }
 
     [Test]
@@ -128,9 +200,17 @@ public class FoodEndpointTests {
         UserProvidedFoodItem food = new("Test", 500,10,10,59);
         var resp = await _client.PostAsJsonAsync("/api/enterfood", food);
         Assert.That(resp.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.BadRequest));
-        var err = await resp.Content.ReadAsStringAsync();
+        var err = await resp.Content.ReadFromJsonAsync<string>();
 
-        Assert.That(err == "Calories can't be less than calories from macros");
+        Assert.That(err, Is.EqualTo("Calories can't be less than calories from macros"), err);
+    }
+
+    [Test]
+    public async Task TryEnterMacrosExact100(){
+        UserProvidedFoodItem food = new("Test", 9999,40,30,30);
+        var resp = await _client.PostAsJsonAsync("/api/enterfood", food);
+        Assert.That(resp.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.Created));
+
     }
 
     [Test]
@@ -138,8 +218,8 @@ public class FoodEndpointTests {
         UserProvidedFoodItem food = new("Test", 9999,40,40,40);
         var resp = await _client.PostAsJsonAsync("/api/enterfood", food);
         Assert.That(resp.StatusCode, Is.EqualTo(System.Net.HttpStatusCode.BadRequest));
-        var err = await resp.Content.ReadAsStringAsync();
+        var err = await resp.Content.ReadFromJsonAsync<string>();
 
-        Assert.That(err == "Protein, Carbohydrates and Fat can't be more than 100gram per 100 gram");
+        Assert.That(err, Is.EqualTo("Protein, Carbohydrates and Fat can't be more than 100gram per 100 gram"),err);
     }
 }
