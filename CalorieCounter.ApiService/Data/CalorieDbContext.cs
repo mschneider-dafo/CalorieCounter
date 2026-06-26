@@ -35,12 +35,16 @@ e       */
         modelBuilder.Entity<BarcodeEntry>()
                     .HasOne(x=> x.FoodItem)
                     .WithMany()
-                    .HasForeignKey(x=> x.FoodItemId)
-                    .HasPrincipalKey(x=> x.InternalId);
+                    .HasPrincipalKey(x=> x.InternalId)
+                    .HasForeignKey(x=> x.FoodItemId);
 
         /*
          * FoodEntry
         */
+
+        modelBuilder.Entity<FoodEntry>()
+                    .HasIndex(x=> x.PublicIdentifier)
+                    .IsUnique();
 
         modelBuilder.Entity<FoodEntry>()
                     .HasOne(x=> x.User)
@@ -50,7 +54,8 @@ e       */
         modelBuilder.Entity<FoodEntry>()
                     .HasOne(x=> x.FoodItem)
                     .WithMany()
-                    .HasForeignKey(x=> x.FoodItemId);
+                    .HasForeignKey(x=> x.FoodItemId)
+                    .HasPrincipalKey(x=> x.InternalId);
 
     }
 

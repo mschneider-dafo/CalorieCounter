@@ -3,6 +3,7 @@ using System;
 using CalorieCounter.ApiService;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CalorieCounter.ApiService.Migrations
 {
     [DbContext(typeof(CalorieDbContext))]
-    partial class CalorieDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260626214221_FoodEntryChange")]
+    partial class FoodEntryChange
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.9");
@@ -64,9 +67,6 @@ namespace CalorieCounter.ApiService.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("FoodItemId");
-
-                    b.HasIndex("PublicIdentifier")
-                        .IsUnique();
 
                     b.HasIndex("UserId");
 

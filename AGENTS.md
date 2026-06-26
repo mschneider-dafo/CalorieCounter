@@ -26,6 +26,17 @@ This is a **personal learning / handcoding project**. The codebase is intentiona
 - Respect the user's ownership of the learning process.
 
 ## Quick Reference Links
+
+### Local Aspire Skills (Primary)
+The `.agents/skills/` tree contains detailed workflow guidance for Aspire operations. Consult these first before external docs:
+
+- **aspire** (`.agents/skills/aspire/SKILL.md`) — Top-level router for Aspire 13.4 distributed apps. Detects AppHost, enforces safety guardrails, routes to sub-skills.
+- **aspire-orchestration** (`.agents/skills/aspire-orchestration/SKILL.md`) — AppHost lifecycle: `aspire start`, `aspire stop`, `aspire wait`, file-lock recovery, resource commands.
+- **aspire-monitoring** (`.agents/skills/aspire-monitoring/SKILL.md`) — Logs, traces, metrics, dashboard, telemetry export, browser telemetry.
+- **aspire-deployment** (`.agents/skills/aspire-deployment/SKILL.md`) — Deploy to Docker Compose, Kubernetes, Azure, or AWS via `aspire deploy` / `aspire publish`.
+- **aspire-init** (`.agents/skills/aspire-init/SKILL.md`) — First-run flow: `aspire new` / `aspire init`, skeleton drop, template selection.
+
+### External Docs (Fallback)
 - **Aspire AppHost & Orchestration**: https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/app-host-overview
 - **Aspire ServiceDefaults**: https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/service-defaults
 - **Minimal APIs in ASP.NET Core**: https://learn.microsoft.com/en-us/aspnet/core/fundamentals/minimal-apis

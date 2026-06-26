@@ -62,6 +62,7 @@ app.UseAuthorization();
 app.MapDefaultEndpoints();
 app.MapAuthEndpoints();
 app.MapFoodEndpoints();
+app.MapMealEndpoints();
 
 app.Run();
 
