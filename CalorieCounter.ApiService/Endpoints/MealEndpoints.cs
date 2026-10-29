@@ -26,29 +26,15 @@ public static class MealEndpoints{
 
     public static Expression<Func<FoodEntry,MealForUsers>> ToMealExpression = item => new MealForUsers(item.PublicIdentifier,
                 item.FoodItem!.Name,
-                item.FoodItem.CaloriesPer100g * item.AmountInGramm,
-                item.FoodItem.Protein * item.AmountInGramm, 
-                item.FoodItem.Carbohydrates * item.AmountInGramm, 
-                item.FoodItem.Fat * item.AmountInGramm, 
+                item.FoodItem.CaloriesPer100g * item.AmountInGramm /100,
+                item.FoodItem.Protein * item.AmountInGramm /100, 
+                item.FoodItem.Carbohydrates * item.AmountInGramm /100, 
+                item.FoodItem.Fat * item.AmountInGramm /100, 
                 item.AmountInGramm,
                 item.EatenAt);
-
-    private static MealForUsers ToMeal(FoodEntry item){
-        return new MealForUsers(item.PublicIdentifier,
-                item.FoodItem?.Name ?? "",
-                (item.FoodItem?.CaloriesPer100g ?? 0)*item.AmountInGramm,
-                (item.FoodItem?.Protein ?? 0)* item.AmountInGramm, 
-                (item.FoodItem?.Carbohydrates ?? 0)*item.AmountInGramm, 
-                (item.FoodItem?.Fat ?? 0)* item.AmountInGramm, 
-                item.AmountInGramm,
-                item.EatenAt);
-    }
     
     private static async Task<Results<Created<MealForUsers>,BadRequest<string>>>  EnterFoodEntry(MealRequest request, UserManager<User> manager, CalorieDbContext db, HttpContext context){
         var user = await manager.GetUserAsync(context.User);
-        if(user is null)
-            return TypedResults.BadRequest("User does not exist");
-
         var foodItem =  await db.FoodItems.FirstOrDefaultAsync(x=> x.InternalId == request.FoodItem);
 
         if(foodItem is null)
@@ -56,7 +42,7 @@ public static class MealEndpoints{
 
         FoodEntry entry = new FoodEntry(){
             PublicIdentifier = Guid.NewGuid(),
-            UserId = user.Id ,
+            UserId = user!.Id ,
             User = user,
             FoodItemId = foodItem.InternalId,
             FoodItem = foodItem,
@@ -68,7 +54,9 @@ public static class MealEndpoints{
 
         await db.SaveChangesAsync();
 
-        return TypedResults.Created($"/api/foodentry/{entry.PublicIdentifier}", ToMeal(entry));
+        MealForUsers? meal = await db.FoodEntries.Where(x=> x.PublicIdentifier == entry.PublicIdentifier).Select(ToMealExpression).FirstOrDefaultAsync();
+
+        return TypedResults.Created($"/api/foodentry/{entry.PublicIdentifier}", meal);
     }
 
     private static async Task<Results<Ok<List<MealForUsers>>,BadRequest<string>>> GetFoodEntries(DateTimeOffset? after, DateTimeOffset? before, UserManager<User> manager, CalorieDbContext db, HttpContext context){
@@ -86,14 +74,14 @@ public static class MealEndpoints{
     private static async Task<Results<Ok<MealForUsers>,NotFound>> GetFoodEntry(Guid id, UserManager<User> manager, CalorieDbContext db, HttpContext context){
         var user = await manager.GetUserAsync(context.User);
 
-        var res = await db.FoodEntries.FirstOrDefaultAsync(x=> x.User == user && x.PublicIdentifier == id);
+        var res = await db.FoodEntries.Where(x=> x.User == user && x.PublicIdentifier == id).Select(ToMealExpression).FirstOrDefaultAsync();
         if(res is null)
             return TypedResults.NotFound();
 
-        return TypedResults.Ok(ToMeal(res));
+        return TypedResults.Ok(res);
     }
 
-    private static async Task<Results<Ok,NotFound>> DeleteFoodEntry(Guid id, UserManager<User> manager, CalorieDbContext db, HttpContext context){
+    private static async Task<Results<NoContent,NotFound>> DeleteFoodEntry(Guid id, UserManager<User> manager, CalorieDbContext db, HttpContext context){
         var user = await manager.GetUserAsync(context.User);
 
         var res = await db.FoodEntries.FirstOrDefaultAsync(x=> x.User == user && x.PublicIdentifier == id);
@@ -104,7 +92,7 @@ public static class MealEndpoints{
 
         await db.SaveChangesAsync();
 
-        return TypedResults.Ok();
+        return TypedResults.NoContent();
     }
 
 }

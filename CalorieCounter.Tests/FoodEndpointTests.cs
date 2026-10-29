@@ -1,7 +1,6 @@
 using CalorieCounter.ApiService;
 public class FoodEndpointTests {
-    private CalorieWebApplicationFactory<Program> _factory = null!;
-    private HttpClient _client = null!;
+    private CalorieWebApplicationFactory<Program> _factory = null!; private HttpClient _client = null!;
     private string _token ="";
     private Guid pizzaGuid;
 
